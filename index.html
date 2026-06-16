@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Team Dashboard — Prototype (NR)</title>
+<style>
+  :root{
+    --primary-action:#405c9f; --primary-action-hover:#264486;
+    --pearl-blue:#748fd6; --pearl-blue-light:#e8edf8; --pearl-blue-dark:#5a72b0;
+    --sunset-coral:#eba797; --coral-dark:#c4796a; --coral-light:#fdf0ed;
+    --sand-gold:#d3bc8d; --gold-light:#f5f0e4; --gold-dark:#a89567;
+    --status-active:#5ba87a; --status-paused:#d3bc8d; --status-error:#ba1a1a;
+    --surface:#faf9f9; --surface-white:#fff; --surface-container:#efeded;
+    --surface-container-low:#f5f3f3; --surface-container-lowest:#fff; --bg-sidebar:#efeded; --bg-hover:#f2f2f7;
+    --border-light:#e8e8ec; --border-medium:#d0d0d8;
+    --text-primary:#1b1c1c; --text-secondary:#444650; --text-tertiary:#747781; --text-muted:#848484;
+    --radius-lg:16px; --radius-md:10px; --radius-sm:6px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface);color:var(--text-primary);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.45}
+  .app{display:flex;min-height:100vh}
+  /* sidebar */
+  .side{width:208px;flex:none;background:var(--bg-sidebar);border-right:1px solid var(--border-light);padding:18px 12px;position:sticky;top:0;height:100vh}
+  .side__brand{display:flex;align-items:center;gap:8px;padding:6px 10px 18px}
+  .side__logo{width:26px;height:26px;border-radius:7px;background:var(--primary-action);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px}
+  .side__brandtxt{font-weight:700;letter-spacing:-.01em}
+  .side__nav{display:flex;flex-direction:column;gap:2px}
+  .side__item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-md);color:var(--text-secondary);font-weight:500;cursor:default}
+  .side__item .dot{width:7px;height:7px;border-radius:50%;background:var(--border-medium)}
+  .side__item--active{background:var(--surface-white);color:var(--text-primary);font-weight:600;box-shadow:inset 0 0 0 1px var(--border-light)}
+  .side__item--active .dot{background:var(--primary-action)}
+  .side__foot{position:absolute;bottom:16px;left:12px;right:12px;font-size:11px;color:var(--text-muted)}
+  /* main */
+  .main{flex:1;min-width:0;padding:22px 28px 60px;max-width:1200px}
+  .pagehead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .pagehead h1{margin:0;font-size:22px;letter-spacing:-.02em}
+  .pagehead .sub{color:var(--text-tertiary);margin-top:2px;font-size:13px}
+  .head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:var(--surface-white);border:1px solid var(--border-light);border-radius:999px;padding:6px 12px;font-size:12px;color:var(--text-secondary);font-weight:500}
+  .pill .pdot{width:7px;height:7px;border-radius:50%;background:var(--status-active)}
+  .toggle{display:inline-flex;background:var(--surface-container);border-radius:999px;padding:3px}
+  .toggle button{border:0;background:transparent;color:var(--text-secondary);font-weight:600;font-size:12px;padding:6px 14px;border-radius:999px;cursor:pointer}
+  .toggle button.active{background:var(--surface-white);color:var(--primary-action);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .switcher{margin:18px 0 8px}
+  .switcher .toggle button{font-size:13px;padding:8px 16px}
+  /* tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0 8px}
+  .tile{background:var(--surface-white);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px 16px}
+  .tile__label{font-size:12px;color:var(--text-tertiary);font-weight:500}
+  .tile__num{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-top:6px}
+  .tile__num--coral{color:var(--coral-dark)}
+  .tile__sub{font-size:11px;color:var(--text-muted);margin-top:3px}
+  /* section */
+  .section{background:var(--surface-white);border:1px solid var(--border-light);border-radius:var(--radius-lg);margin-top:18px;overflow:hidden}
+  .section__head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border-light);flex-wrap:wrap}
+  .section__title{font-weight:700;letter-spacing:-.01em}
+  .section__meta{font-size:12px;color:var(--text-tertiary)}
+  .section__body{padding:6px 0}
+  /* funnel table */
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:10px 18px;font-size:13px;border-bottom:1px solid var(--border-light)}
+  thead th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);font-weight:600;background:var(--surface-container-low)}
+  tbody tr:last-child td{border-bottom:0}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .stagecell{display:flex;align-items:center;gap:12px}
+  .barwrap{position:relative;flex:1;min-width:120px;height:22px;background:var(--surface-container-low);border-radius:var(--radius-sm);overflow:hidden}
+  .barfill{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--pearl-blue),var(--pearl-blue-light));border-radius:var(--radius-sm)}
+  .stagename{position:relative;z-index:1;font-weight:600;padding-left:10px;white-space:nowrap}
+  .conv{font-weight:600}
+  .conv--good{color:var(--status-active)} .conv--mid{color:var(--gold-dark)} .conv--low{color:var(--coral-dark)}
+  .badge{display:inline-block;min-width:26px;text-align:center;background:var(--pearl-blue-light);color:var(--primary-action);border-radius:999px;padding:2px 9px;font-weight:600;font-size:12px}
+  .badge--zero{background:var(--surface-container);color:var(--text-muted)}
+  .kpi{display:inline-block;border-radius:999px;padding:2px 9px;font-weight:600;font-size:12px}
+  .kpi--green{background:#e6f3ec;color:#2f7d52} .kpi--yellow{background:var(--gold-light);color:var(--gold-dark)} .kpi--red{background:var(--coral-light);color:var(--coral-dark)} .kpi--neutral{background:var(--surface-container);color:var(--text-secondary)}
+  .ratio{font-weight:700;color:var(--primary-action)}
+  .ratio--pending{color:var(--text-muted);font-weight:500}
+  /* tabs */
+  .tabs{display:inline-flex;gap:4px;background:var(--surface-container);border-radius:999px;padding:3px}
+  .tabs button{border:0;background:transparent;color:var(--text-secondary);font-weight:600;font-size:12px;padding:6px 16px;border-radius:999px;cursor:pointer}
+  .tabs button.active{background:var(--surface-white);color:var(--primary-action);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .rowclick{cursor:pointer}
+  .rowclick:hover{background:var(--bg-hover)}
+  .rowsel{background:var(--surface-container-low)}
+  .chev{color:var(--text-tertiary);font-size:11px}
+  /* member detail */
+  .detail{background:var(--surface-container-low);padding:16px 18px}
+  .detail__kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px}
+  .mini{background:var(--surface-white);border:1px solid var(--border-light);border-radius:var(--radius-md);padding:10px 12px}
+  .mini__l{font-size:11px;color:var(--text-tertiary)} .mini__v{font-size:18px;font-weight:700;margin-top:2px}
+  .mini--accent .mini__v{color:var(--primary-action)}
+  .detail__sub{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);font-weight:600;margin:6px 0 8px}
+  .pipe{display:flex;flex-direction:column;gap:6px}
+  .pstage{background:var(--surface-white);border:1px solid var(--border-light);border-radius:var(--radius-md);overflow:hidden}
+  .pstage__row{display:flex;align-items:center;gap:12px;padding:9px 12px;cursor:pointer}
+  .pstage__row:hover{background:var(--bg-hover)}
+  .pstage__name{font-weight:600;flex:1}
+  .pstage__meta{font-size:12px;color:var(--text-tertiary);font-variant-numeric:tabular-nums}
+  .cand{border-top:1px solid var(--border-light)}
+  .cand table{width:100%}
+  .cand th{background:transparent;padding:7px 14px}
+  .cand td{padding:7px 14px;font-size:12.5px}
+  .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--text-secondary);background:var(--surface-container);border-radius:5px;padding:1px 6px}
+  .empty{padding:18px;text-align:center;color:var(--text-muted);font-size:13px}
+  .foot{font-size:11px;color:var(--text-muted);padding:12px 18px;border-top:1px solid var(--border-light)}
+  .protoflag{display:inline-flex;align-items:center;gap:6px;background:var(--gold-light);color:var(--gold-dark);border:1px solid var(--sand-gold);border-radius:999px;padding:4px 11px;font-size:11px;font-weight:600}
+  .note{font-size:12px;color:var(--text-tertiary);padding:10px 18px 2px}
+  .hint{font-size:11px;color:var(--text-muted)}
+  @media (max-width:760px){.side{display:none}.main{padding:18px 14px 50px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="side__brand"><div class="side__logo">P</div><div class="side__brandtxt">Pearl</div></div>
+    <nav class="side__nav">
+      <div class="side__item"><span class="dot"></span>Home</div>
+      <div class="side__item"><span class="dot"></span>Candidates</div>
+      <div class="side__item"><span class="dot"></span>Clients</div>
+      <div class="side__item"><span class="dot"></span>Jobs</div>
+      <div class="side__item side__item--active"><span class="dot"></span>Dashboard</div>
+      <div class="side__item"><span class="dot"></span>Pipeline Editor</div>
+    </nav>
+    <div class="side__foot">Pearl logo placeholder<br/>Internal TA Pipeline</div>
+  </aside>
+
+  <main class="main">
+    <div class="pagehead">
+      <div>
+        <h1>Dashboard</h1>
+        <div class="sub">Recruitment KPIs &amp; team performance</div>
+      </div>
+      <div class="head-actions">
+        <span class="protoflag">● Prototype — reflects PRD target state</span>
+        <span class="pill"><span class="pdot"></span>This month · Jun 1 – Jun 16, 2026</span>
+        <div class="toggle" id="trackToggle">
+          <button data-track="niche" class="active">NR</button>
+          <button data-track="std">SR</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="switcher">
+      <div class="toggle">
+        <button class="active">Team Dashboard</button>
+        <button title="Role Dashboard (separate view)">Role Dashboard</button>
+      </div>
+    </div>
+
+    <!-- Overview tiles -->
+    <div class="tiles" id="tiles"></div>
+
+    <!-- Pipeline Funnel (T5 — role-dash format, flow order) -->
+    <section class="section">
+      <div class="section__head">
+        <span class="section__title">Pipeline Funnel</span>
+        <span class="section__meta">Flow order · Active · Throughput · Avg time in stage / step</span>
+      </div>
+      <div class="note">Rows are in pipeline-flow order. Click a stage to see its underlying Workable/HubSpot steps. <span class="hint">(T5)</span></div>
+      <div class="section__body">
+        <table>
+          <thead><tr>
+            <th>Stage</th>
+            <th class="num">Active</th>
+            <th class="num">→ Throughput</th>
+            <th class="num">Avg in Stage</th>
+            <th class="num">Avg in Step</th>
+          </tr></thead>
+          <tbody id="funnelBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Team Performance (tabs + drilldown) -->
+    <section class="section">
+      <div class="section__head">
+        <span class="section__title">Team Performance</span>
+        <div class="tabs" id="roleTabs"></div>
+      </div>
+      <div class="note" id="teamNote"></div>
+      <div class="section__body">
+        <div id="teamTableWrap"></div>
+      </div>
+      <div class="foot">Attribution via HubSpot <code>assigned_recruiter</code> and job-title classifier. Counts are current-state approximations — see §10 data-accuracy verification in the PRD before trusting values.</div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ---------- mock data (illustrative, reflects PRD target state) ---------- */
+const TILES = [
+  {label:'Active Requisitions', value:34},
+  {label:'Roles Paused', value:5, sub:'15% of total'},
+  {label:'At Risk >30d', value:8, sub:'24% of active', coral:true},
+  {label:'Projected to Close', value:6},
+  {label:'In Pipeline', value:271},
+  {label:'Placed This Month', value:9},
+  {label:'Poached', value:3},
+];
+
+/* funnel: flow order, throughput cumulative-to-cumulative, avg stage/step days */
+const FUNNEL = [
+  {stage:'Sourced / Applied', active:142, conv:null, avgStage:3, avgStep:2,
+    steps:[{n:'Sourced',d:2},{n:'Applied',d:1},{n:'Sourced from Pool',d:4}]},
+  {stage:'Fit Check', active:38, conv:64, avgStage:5, avgStep:4,
+    steps:[{n:'Fit Check (Scheduled)',d:4},{n:'Fit Check Passed',d:1}]},
+  {stage:'Topgrading (TGI)', active:24, conv:71, avgStage:6, avgStep:6,
+    steps:[{n:'Pending TGI',d:3},{n:'Top Grading Interview',d:3}]},
+  {stage:'Reference Check', active:11, conv:82, avgStage:4, avgStep:4,
+    steps:[{n:'Reference Call',d:2},{n:'Passed Reference Check',d:2}]},
+  {stage:'Endorsed to Client', active:19, conv:88, avgStage:7, avgStep:7,
+    steps:[{n:'Submission Ready',d:2},{n:'Submitted to Client',d:5}]},
+  {stage:'Client Interviews', active:14, conv:74, avgStage:9, avgStep:6,
+    steps:[{n:'1st Client Interview',d:6},{n:'2nd Client Interview',d:3}]},
+  {stage:'Candidate Selected', active:6, conv:61, avgStage:5, avgStep:5,
+    steps:[{n:'Selected by Client',d:5}]},
+  {stage:'Pending Offer', active:4, conv:83, avgStage:6, avgStep:4,
+    steps:[{n:'Pending Offer',d:2},{n:'Offer Extended',d:4}]},
+  {stage:'Placed (Contract Signed)', active:9, conv:92, avgStage:null, avgStep:null, steps:[]},
+];
+
+/* helper to build a member pipeline + candidates */
+function pipe(arr){ return arr; }
+const C = (name,code,role,days)=>({name,code,role,days});
+
+const TMC = [
+  {name:'Matt', active:18, placements:3, endorsed:24, interview:14, disq:5, offers:4,
+    s2i:58, oa:95, avgHire:41,
+    pipeline:[
+      {stage:'Fit Check', count:5, cands:[C('Dana R.','A012','Ops Manager · Modern Urology',4),C('Leo M.','A012','Ops Manager · Modern Urology',6),C('Priya S.','A031','CFO · Solar',3),C('Tom B.','A031','CFO · Solar',5),C('Ivy C.','A044','Impl. Specialist · Valcre',2)]},
+      {stage:'Topgrading (TGI)', count:4, cands:[C('Noah K.','A012','Ops Manager · Modern Urology',7),C('Mara L.','A031','CFO · Solar',5),C('Sam P.','A044','Impl. Specialist · Valcre',8),C('Gabe T.','A044','Impl. Specialist · Valcre',6)]},
+      {stage:'Endorsed to Client', count:6, cands:[C('Ella V.','A012','Ops Manager · Modern Urology',9),C('Ron D.','A031','CFO · Solar',7),C('Kai N.','A031','CFO · Solar',6),C('Lena F.','A044','Impl. Specialist · Valcre',8),C('Omar H.','A012','Ops Manager · Modern Urology',5),C('Tara W.','A044','Impl. Specialist · Valcre',10)]},
+      {stage:'Client Interviews', count:3, cands:[C('Jude A.','A012','Ops Manager · Modern Urology',11),C('Nina O.','A031','CFO · Solar',8),C('Beau R.','A044','Impl. Specialist · Valcre',6)]},
+      {stage:'Placed', count:3, cands:[C('Cara Z.','A012','Ops Manager · Modern Urology',0),C('Vik S.','A031','CFO · Solar',0),C('Hana Y.','A044','Impl. Specialist · Valcre',0)]},
+    ]},
+  {name:'Airish', active:22, placements:4, endorsed:31, interview:19, disq:6, offers:5,
+    s2i:61, oa:92, avgHire:38,
+    pipeline:[
+      {stage:'Fit Check', count:7, cands:[C('Bea Q.','A052','AI Automation Eng · Tarsadia',3),C('Cory P.','A052','AI Automation Eng · Tarsadia',5),C('Drew M.','A063','Ops Manager · Glucose Goddess',4)]},
+      {stage:'Topgrading (TGI)', count:5, cands:[C('Faye R.','A052','AI Automation Eng · Tarsadia',6),C('Glen S.','A063','Ops Manager · Glucose Goddess',7)]},
+      {stage:'Endorsed to Client', count:6, cands:[C('Hugo T.','A052','AI Automation Eng · Tarsadia',8),C('Iris U.','A063','Ops Manager · Glucose Goddess',6)]},
+      {stage:'Client Interviews', count:4, cands:[C('Jane V.','A052','AI Automation Eng · Tarsadia',9),C('Karl W.','A063','Ops Manager · Glucose Goddess',7)]},
+      {stage:'Placed', count:4, cands:[C('Lara X.','A052','AI Automation Eng · Tarsadia',0),C('Milo Z.','A063','Ops Manager · Glucose Goddess',0)]},
+    ]},
+  {name:'Josefina', active:9, placements:2, endorsed:12, interview:8, disq:2, offers:2,
+    s2i:67, oa:100, avgHire:35,
+    pipeline:[
+      {stage:'Fit Check', count:2, cands:[C('Pat E.','A071','Coordinator · Poggesi',3),C('Rae G.','A071','Coordinator · Poggesi',4)]},
+      {stage:'Reference Check', count:2, cands:[C('Sky H.','A071','Coordinator · Poggesi',2)]},
+      {stage:'Endorsed to Client', count:2, cands:[C('Uma J.','A071','Coordinator · Poggesi',5),C('Walt K.','A071','Coordinator · Poggesi',6)]},
+      {stage:'Placed', count:2, cands:[C('Zoe N.','A071','Coordinator · Poggesi',0),C('Abe O.','A071','Coordinator · Poggesi',0)]},
+    ]},
+];
+
+const TAP = [
+  {name:'Manuel', active:14, placements:2, churns:0,
+    pipeline:[
+      {stage:'Sourced / Applied', count:6, cands:[C('Cal R.','A052','AI Automation Eng · Tarsadia',2),C('Dot S.','A052','AI Automation Eng · Tarsadia',3)]},
+      {stage:'Fit Check', count:4, cands:[C('Eve T.','A052','AI Automation Eng · Tarsadia',4)]},
+      {stage:'Endorsed to Client', count:2, cands:[C('Fox U.','A052','AI Automation Eng · Tarsadia',5)]},
+      {stage:'Placed', count:2, cands:[C('Gus V.','A052','AI Automation Eng · Tarsadia',0)]},
+    ]},
+  {name:'Marwan', active:11, placements:1, churns:1,
+    pipeline:[
+      {stage:'Sourced / Applied', count:5, cands:[C('Hal W.','A063','Ops Manager · Glucose Goddess',2)]},
+      {stage:'Topgrading (TGI)', count:3, cands:[C('Ida X.','A063','Ops Manager · Glucose Goddess',6)]},
+      {stage:'Endorsed to Client', count:2, cands:[C('Jay Y.','A063','Ops Manager · Glucose Goddess',7)]},
+      {stage:'Placed', count:1, cands:[C('Kit Z.','A063','Ops Manager · Glucose Goddess',0)]},
+    ]},
+  {name:'Khesha', active:8, placements:1, churns:0,
+    pipeline:[
+      {stage:'Sourced / Applied', count:4, cands:[C('Lou A.','A081','E-comm Ops · Milros',3)]},
+      {stage:'Fit Check', count:2, cands:[C('Mae B.','A081','E-comm Ops · Milros',4)]},
+      {stage:'Placed', count:1, cands:[C('Ned C.','A081','E-comm Ops · Milros',0)]},
+    ]},
+  {name:'Sky', active:6, placements:0, churns:0,
+    pipeline:[
+      {stage:'Sourced / Applied', count:4, cands:[C('Ola D.','A090','Paralegal · Yates Law',2)]},
+      {stage:'Fit Check', count:2, cands:[C('Pia E.','A090','Paralegal · Yates Law',3)]},
+    ]},
+];
+
+/* ---------- render ---------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+
+function convClass(v){ if(v==null)return''; if(v>=80)return'conv--good'; if(v>=60)return'conv--mid'; return'conv--low'; }
+
+function renderTiles(){
+  const wrap=$('#tiles'); wrap.innerHTML='';
+  TILES.forEach(t=>{
+    const c=el('div','tile');
+    c.innerHTML=`<div class="tile__label">${t.label}</div>
+      <div class="tile__num${t.coral?' tile__num--coral':''}">${t.value}</div>
+      ${t.sub?`<div class="tile__sub">${t.sub}</div>`:''}`;
+    wrap.appendChild(c);
+  });
+}
+
+function renderFunnel(){
+  const body=$('#funnelBody'); body.innerHTML='';
+  const max=Math.max(...FUNNEL.map(f=>f.active));
+  FUNNEL.forEach((f,i)=>{
+    const tr=el('tr','rowclick');
+    const pct=Math.round(f.active/max*100);
+    tr.innerHTML=`<td>
+        <div class="stagecell"><div class="barwrap"><div class="barfill" style="width:${pct}%"></div>
+        <span class="stagename">${f.steps.length?'▸ ':''}${f.stage}</span></div></div></td>
+      <td class="num">${f.active}</td>
+      <td class="num"><span class="conv ${convClass(f.conv)}">${f.conv==null?'—':f.conv+'%'}</span></td>
+      <td class="num">${f.avgStage==null?'—':f.avgStage+'d'}</td>
+      <td class="num">${f.avgStep==null?'—':f.avgStep+'d'}</td>`;
+    body.appendChild(tr);
+    const sub=el('tr'); sub.style.display='none';
+    sub.innerHTML=`<td colspan="5" style="padding:0;background:var(--surface-container-low)">
+      <table><thead><tr><th>Underlying step</th><th class="num">Avg days in step</th></tr></thead>
+      <tbody>${f.steps.map(s=>`<tr><td style="padding-left:34px">${s.n}</td><td class="num">${s.d}d</td></tr>`).join('')||'<tr><td class="empty" colspan=2>Terminal stage</td></tr>'}</tbody></table></td>`;
+    body.appendChild(sub);
+    if(f.steps.length){ tr.addEventListener('click',()=>{ sub.style.display = sub.style.display==='none'?'':'none'; }); }
+    else tr.classList.remove('rowclick');
+  });
+}
+
+let state={track:'niche', role:'tmc', openMember:null, openStage:{}};
+
+function rolesForTrack(track){
+  // T4: Topgrader tab only on SR; NR shows TMC + TAP
+  return track==='std' ? [['tmc','TMC'],['headhunter','TAP'],['topgrader','Topgrader']]
+                       : [['tmc','TMC'],['headhunter','TAP']];
+}
+
+function renderTabs(){
+  const wrap=$('#roleTabs'); wrap.innerHTML='';
+  rolesForTrack(state.track).forEach(([role,label])=>{
+    const b=el('button',state.role===role?'active':'',label);
+    b.addEventListener('click',()=>{state.role=role;state.openMember=null;state.openStage={};renderTeam();});
+    wrap.appendChild(b);
+  });
+  const note=$('#teamNote');
+  if(state.track==='std') note.innerHTML='SR track — Topgrader tab appears here because topgradings are conducted by a dedicated Topgrader on SR. <span class="hint">(T4)</span>';
+  else note.innerHTML='NR track — no Topgrader tab; TMCs conduct topgrading in NR. Click a person to see their pipeline to candidate level. <span class="hint">(T1, T3, T4)</span>';
+}
+
+function ratioStr(endorsed,placements){
+  if(!placements) return '—';
+  const r=(endorsed/placements);
+  return (Math.round(r*10)/10).toString().replace(/\.0$/,'')+':1';
+}
+
+function renderTeam(){
+  renderTabs();
+  const wrap=$('#teamTableWrap'); wrap.innerHTML='';
+  if(state.track==='std' && state.role==='topgrader'){
+    wrap.appendChild(el('div','empty','Topgrader data shown on SR — illustrative tab placement (T4).'));
+    return;
+  }
+  const isTmc = state.role==='tmc';
+  const members = isTmc?TMC:TAP;
+  const table=el('table');
+  table.innerHTML = isTmc
+    ? `<thead><tr><th>TMC</th><th class="num">Active</th><th class="num">Placements</th>
+        <th class="num">Endorse : Place</th><th class="num">Shortlist→Intvw</th>
+        <th class="num">Offer Accept</th><th class="num">Avg Days/Hire</th><th></th></tr></thead><tbody></tbody>`
+    : `<thead><tr><th>TAP</th><th class="num">Active</th><th class="num">Placements</th>
+        <th class="num">Endorse : Place</th><th class="num">Churns</th><th></th></tr></thead><tbody></tbody>`;
+  const tb=table.querySelector('tbody');
+
+  members.forEach(m=>{
+    const open=state.openMember===m.name;
+    const tr=el('tr','rowclick'+(open?' rowsel':''));
+    if(isTmc){
+      tr.innerHTML=`<td style="font-weight:${open?700:500}">${m.name}</td>
+        <td class="num"><span class="badge">${m.active}</span></td>
+        <td class="num"><span class="badge">${m.placements}</span></td>
+        <td class="num"><span class="ratio">${ratioStr(m.endorsed,m.placements)}</span></td>
+        <td class="num"><span class="kpi ${m.s2i>=60?'kpi--green':m.s2i>=45?'kpi--yellow':'kpi--red'}">${m.s2i}%</span></td>
+        <td class="num"><span class="kpi ${m.oa>=97?'kpi--green':'kpi--yellow'}">${m.oa}%</span></td>
+        <td class="num"><span class="kpi kpi--neutral">${m.avgHire}d</span></td>
+        <td class="num"><span class="chev">${open?'▲':'▼'}</span></td>`;
+    } else {
+      tr.innerHTML=`<td style="font-weight:${open?700:500}">${m.name}</td>
+        <td class="num"><span class="badge">${m.active}</span></td>
+        <td class="num"><span class="badge">${m.placements}</span></td>
+        <td class="num"><span class="ratio ratio--pending" title="Pending headhunter endorsement counts (T3)">— *</span></td>
+        <td class="num">${m.churns}</td>
+        <td class="num"><span class="chev">${open?'▲':'▼'}</span></td>`;
+    }
+    tr.addEventListener('click',()=>{state.openMember=open?null:m.name;state.openStage={};renderTeam();});
+    tb.appendChild(tr);
+
+    if(open){
+      const cols=isTmc?8:6;
+      const dr=el('tr'); const td=el('td'); td.colSpan=cols; td.style.padding='0';
+      td.appendChild(renderDetail(m,isTmc));
+      dr.appendChild(td); tb.appendChild(dr);
+    }
+  });
+  wrap.appendChild(table);
+  if(!isTmc){
+    const f=el('div','foot','* TAP Endorsement:Placement ratio is blocked until headhunter endorsement counts are populated (see PRD T3 / §10).');
+    wrap.appendChild(f);
+  }
+}
+
+function renderDetail(m,isTmc){
+  const d=el('div','detail');
+  // KPI minis
+  const minis = isTmc
+    ? [['Endorsed',m.endorsed],['Reached Interview',m.interview],['Disqualified',m.disq],['Offers Extended',m.offers],['Endorse : Place', ratioStr(m.endorsed,m.placements),true]]
+    : [['Placements',m.placements],['Active',m.active],['Churns',m.churns],['Endorse : Place','— *']];
+  const grid=el('div','detail__kpis');
+  minis.forEach(([l,v,accent])=>{
+    grid.appendChild(el('div','mini'+(accent?' mini--accent':''),`<div class="mini__l">${l}</div><div class="mini__v">${v}</div>`));
+  });
+  d.appendChild(grid);
+
+  d.appendChild(el('div','detail__sub','Cumulative pipeline across roles — click a stage for candidates'));
+  const pipe=el('div','pipe');
+  (m.pipeline||[]).forEach((st,idx)=>{
+    const key=m.name+'|'+idx;
+    const so=!!state.openStage[key];
+    const box=el('div','pstage');
+    const row=el('div','pstage__row');
+    row.innerHTML=`<span class="chev">${so?'▾':'▸'}</span><span class="pstage__name">${st.stage}</span>
+      <span class="pstage__meta">${st.count} candidate${st.count===1?'':'s'}</span>`;
+    row.addEventListener('click',()=>{state.openStage[key]=!so;renderTeam();});
+    box.appendChild(row);
+    if(so){
+      const cand=el('div','cand');
+      cand.innerHTML=`<table><thead><tr><th>Candidate</th><th>Job Code</th><th>Role</th><th class="num">Days</th></tr></thead>
+        <tbody>${(st.cands||[]).map(c=>`<tr><td>${c.name}</td><td><span class="code">${c.code}</span></td><td>${c.role}</td><td class="num">${c.days}d</td></tr>`).join('')||'<tr><td class="empty" colspan=4>No candidates</td></tr>'}</tbody></table>`;
+      box.appendChild(cand);
+    }
+    pipe.appendChild(box);
+  });
+  if(!(m.pipeline||[]).length) pipe.appendChild(el('div','empty','No active pipeline.'));
+  d.appendChild(pipe);
+  return d;
+}
+
+/* track toggle */
+$('#trackToggle').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  [...e.currentTarget.children].forEach(x=>x.classList.toggle('active',x===b));
+  state.track=b.dataset.track;
+  // keep role valid for track
+  const valid=rolesForTrack(state.track).map(r=>r[0]);
+  if(!valid.includes(state.role)) state.role='tmc';
+  state.openMember=null;state.openStage={};
+  renderTeam();
+});
+
+renderTiles();
+renderFunnel();
+renderTeam();
+</script>
+</body>
+</html>
